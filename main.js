@@ -568,11 +568,16 @@ function normalize(row) {
     "发货地": toStr(row["发货地"]),
     "店铺评分": toNum(row["店铺评分"]),
     "上架天数": toNum(row["在架天数"]),
+    "上架日期": toStr(row["上架日期"]),          // 09-30 老哥定：与「上架天数」并存（日期精确）
     "来源": "小红书市集", // 结构文档 §13.3：来源固定写「小红书市集」
     // B2.8（老哥选定的字段）：
     "SKU数": toNum(row["SKU数"]),          // 接口不保证有 → 没有就留空
     "选中SKU": toStr(row["选中SKU"]),
     "店铺链接": toStr(row["店铺链接"]),
+    // 09-30 老哥定（店铺三件套；工作台写库时「店铺名」落到「对标店铺」列）：
+    "店铺名": toStr(row["店铺名"]),
+    "店铺总销量": toNum(row["店铺总销量"]),
+    "粉丝数": toNum(row["粉丝数"]),
     "商品角标": Array.isArray(row["角标"]) ? (row["角标"].filter(Boolean).join("、") || null) : toStr(row["角标"]),
   };
   const track = {
@@ -580,7 +585,7 @@ function normalize(row) {
   };
   // 本次采集规格**之外**的键：原样保留在 extra，供人看/以后决定要不要用（不擅自写库）
   const extra = {};
-  const KNOWN = new Set(["标题", "现价", "到手价", "发货地", "店铺评分", "在架天数", "已售", "SKU数", "选中SKU", "店铺链接", "角标"]);
+  const KNOWN = new Set(["标题", "现价", "到手价", "发货地", "店铺评分", "在架天数", "已售", "SKU数", "选中SKU", "店铺链接", "角标", "上架日期", "店铺名", "店铺总销量", "粉丝数"]);
   Object.keys(row).forEach((k) => {
     if (!KNOWN.has(k)) extra[k] = row[k];
   });
