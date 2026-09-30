@@ -1,7 +1,7 @@
 {
 	"id": "xhs-product-search",
 	"name": "XHS Product Search",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"minAppVersion": "1.4.0",
 	"description": "采集小红书商品与店铺数据为结构化 JSON（含售价/评分/上架/销量/粉丝等）；可保存为 Markdown 笔记（同商品复采自动更新），也可作其他插件的数据后端。免登录、免 Python。｜ Collect Xiaohongshu product & shop data into structured JSON. Save as Markdown notes, or use as a data backend. No login, no Python.",
 	"author": "GitBinS",
