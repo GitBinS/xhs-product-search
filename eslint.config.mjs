@@ -6,6 +6,10 @@ export default defineConfig([
   {
     // 零构建 CommonJS 插件：顶层 require 是架构选择（无打包器），关闭 require 风格规则
     files: ["main.js"],
+    languageOptions: {
+      // 插件运行在 Obsidian 的 Node/Electron 环境：require / module 是合法的
+      globals: { require: "readonly", module: "writable" },
+    },
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {

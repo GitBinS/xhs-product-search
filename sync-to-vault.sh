@@ -11,7 +11,7 @@ if [ ! -d "$VAULT_PLUGIN" ]; then
   mkdir -p "$VAULT_PLUGIN"
 fi
 
-for f in main.js manifest.json styles.css versions.json vendor/xhs.py; do
+for f in main.js manifest.json styles.css versions.json; do
   if [ ! -f "$REPO/$f" ]; then
     echo "❌ 缺少文件：$f"
     exit 1

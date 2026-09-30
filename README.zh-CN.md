@@ -1,6 +1,6 @@
 # 小红书商品搜索
 
-把小红书商品页采成结构化 JSON —— 桌面版 Obsidian 插件。
+把小红书商品页采成结构化 JSON —— **桌面版与手机版 Obsidian 都能用**。
 
 English intro in [README.md](README.md).
 
@@ -17,16 +17,17 @@ English intro in [README.md](README.md).
 
 ## 工作原理
 
-- 采集逻辑在一个自带 Python 脚本里（`vendor/xhs.py`，仓库里是明文；`main.js` 内嵌 base64，首次加载时释放出来 —— 这样社区市场安装也能用）。
-- 脚本**只用 Python 标准库**，不需要 `pip install` 任何东西；只读**公开商品页**，**不需要登录态、不碰任何账号数据**。
-- 只有你**主动发起采集时**才会向 `xiaohongshu.com` 发请求，请求从你本机发出。
-- 需要本机有 Python 3（任意较新版本）；插件自动探测（`python` / `python3` / `py -3`），也可在设置里指定。
+- 采集引擎**内置于插件**，用 Obsidian 官方跨平台网络接口 `requestUrl` 直连两个**公开**接口：
+  - 商品详情：`mall.xiaohongshu.com/api/store/jpd/edith/detail/h5/toc`
+  - 店铺首页：`www.xiaohongshu.com/shop/<sellerId>`（SSR，HTML 内嵌商品 JSON）
+- **不需要 Python、不需要任何外部脚本、不需要 `pip install`**；**无登录态、无 Cookie、不碰任何账号数据**。
+- 只有你**主动发起采集时**才会向 `xiaohongshu.com` 发请求，请求从你本机 / 本机设备发出。
 - 采集结果只回到 Obsidian 里；插件无遥测、不写别处。
 
 ## 环境要求
 
-- 桌面版 Obsidian 1.4.0+（Windows / macOS / Linux）
-- Python 3（任意较新版本，只需标准库）
+- Obsidian 1.4.0+ —— 桌面版（Windows / macOS / Linux）**或移动版（iOS / Android）**
+- 没有别的要求：**不需要 Python**、不需要 Node、不需要任何外部工具。
 
 ## 用法
 
@@ -38,12 +39,9 @@ English intro in [README.md](README.md).
 命令：
 
 - **采集一个商品（链接或商品 ID）**
-- **采集器自检** —— 检查 Python 与脚本是否就位、显示实际用了哪个
+- **采集器自检** —— 检查内置引擎是否就绪
 
-设置：
-
-- **项目目录** —— 可选；指向你自己的 `xhs.py` 所在目录，留空则始终用插件自带副本
-- **Python 路径** —— 可选；留空自动探测
+> 分享短链（`xhslink.com`）在**桌面版**会自动展开；**移动版**请改用完整商品链接，或直接粘商品 ID。
 
 ## 已知边界（如实留空，不猜）
 

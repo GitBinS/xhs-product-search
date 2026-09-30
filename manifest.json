@@ -1,10 +1,10 @@
 {
 	"id": "xhs-product-search",
 	"name": "XHS Product Search",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"minAppVersion": "1.4.0",
-	"description": "Collect Xiaohongshu product details (price, shipping origin, shop rating, listing age, sales) with a bundled standard-library-only Python script. Works standalone or as the data backend for other plugins. No login required.",
+	"description": "采集小红书商品数据为结构化 JSON（价格 / 到手价 / 发货地 / 店铺评分 / 上架天数 / 已售），可独立使用，也可作为其他插件的数据后端；无需登录、无需 Python，桌面版与手机版都可用。｜ Collect Xiaohongshu product data into structured JSON — standalone or as a data backend for other plugins. No login or Python required.",
 	"author": "GitBinS",
 	"authorUrl": "https://github.com/GitBinS",
-	"isDesktopOnly": true
+	"isDesktopOnly": false
 }
