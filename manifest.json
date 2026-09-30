@@ -1,9 +1,9 @@
 {
 	"id": "xhs-product-search",
 	"name": "XHS Product Search",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"minAppVersion": "1.4.0",
-	"description": "采集小红书商品数据为结构化 JSON（价格 / 到手价 / 发货地 / 店铺评分 / 上架天数 / 已售），可独立使用，也可作为其他插件的数据后端；无需登录、无需 Python，桌面版与手机版都可用。｜ Collect Xiaohongshu product data into structured JSON — standalone or as a data backend for other plugins. No login or Python required.",
+	"description": "采集小红书商品与店铺数据为结构化 JSON（售价、到手价、发货地、评分、上架日期、SKU 数、已售、店铺名、粉丝数等）；可保存为 Markdown 笔记（同一商品再次采集会自动更新原笔记），也可作为其他插件的数据后端。免登录、免 Python，桌面版与手机版均可用。｜ Collect Xiaohongshu product & shop data into structured JSON — save as Markdown notes (re-collecting a product updates the same note), or use it as a data backend for other plugins. No login, no Python; desktop and mobile.",
 	"author": "GitBinS",
 	"authorUrl": "https://github.com/GitBinS",
 	"isDesktopOnly": false
