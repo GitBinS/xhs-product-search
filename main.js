@@ -678,7 +678,15 @@ class CollectorPlugin extends Plugin {
     this.addSettingTab(new CollectorSettingTab(this.app, this));
   }
 
-  async loadSettings() { this.settings = Object.assign({}, DEFAULTS, (await this.loadData()) || {}); }
+  /** 只读 DEFAULTS 里定义的键 —— 旧版本遗留的废弃键（如 v0.1.0 的 projectDir/pythonPath）
+      不再载入内存，于是下次保存时它们会从 data.json 里自然消失。 */
+  async loadSettings() {
+    const saved = (await this.loadData()) || {};
+    this.settings = Object.assign({}, DEFAULTS);
+    for (const k of Object.keys(DEFAULTS)) {
+      if (saved[k] !== undefined && saved[k] !== null) this.settings[k] = saved[k];
+    }
+  }
   async saveSettings() { await this.saveData(this.settings); }
 
   /* 采写模式（结构文档 §13.5）：供工作台读取，决定"全采"还是"变了才写" */

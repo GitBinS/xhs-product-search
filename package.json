@@ -1,9 +1,0 @@
-{
-  "name": "xhs-product-search",
-  "private": true,
-  "description": "Dev tooling only (official eslint pre-check). The plugin itself is zero-build CommonJS in main.js.",
-  "dependencies": {
-    "eslint": "^9.39.5",
-    "eslint-plugin-obsidianmd": "^0.4.2"
-  }
-}

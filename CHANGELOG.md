@@ -1,12 +1,5 @@
 # Changelog
 
-## 未发布（Unreleased）
-
-- **设置页改用 Obsidian 1.13 的声明式设置 API**（`getSettingDefinitions()`）——
-  设置项现在会出现在 Obsidian 的**设置搜索**里；`display()` 保留作 1.13 以下的回退（minAppVersion 1.4.0）。
-  读写桥显式接到 `plugin.settings`（`getControlValue` / `setControlValue`），存取路径与原行为一致。
-  官方 eslint 预检：1 warning → **0**。
-
 ## 0.3.0 — 2026-09-30
 
 **采集字段扩充 + 独立使用可存 Markdown（并能更新原笔记）+ 去掉多余提示。**
@@ -38,6 +31,15 @@
 - `测品档案` 表新增 3 列：`上架日期`(text) / `店铺总销量`(number) / `粉丝数`(number)；
   写库时 `店铺名` 落到既有的 `对标店铺` 列（不新增重复列）。
 - 写库清单与店铺采集流程同步补上这些字段。
+
+### 元数据与仓库
+
+- 设置页改用 Obsidian 1.13 的**声明式设置 API**（`getSettingDefinitions()`）—— 设置项现在能被 Obsidian 的**设置搜索**命中；
+  `display()` 保留作 1.13 以下的回退（minAppVersion 1.4.0），读写桥显式接 `plugin.settings`。
+- `loadSettings()` 改为**只读已知键**：旧版本遗留的废弃设置键（v0.1.0 的 `projectDir` / `pythonPath`）不再进内存，
+  下次保存时从 `data.json` 自然消失。
+- **dev 工具链文件移出仓库**（`package.json` / `package-lock.json` / `eslint.config.mjs` 进 `.gitignore`）：
+  插件本体是零构建，把这些提交上去会让审核工具把它们当作插件依赖来分析（报出 eslint 工具链里的 moment 漏洞告警）。
 
 ## 0.2.0 — 2026-09-30
 
