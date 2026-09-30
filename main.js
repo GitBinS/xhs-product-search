@@ -478,6 +478,16 @@ function safeFileName(s) {
     .trim()
     .slice(0, 80);
 }
+/* 正文「每日跟踪」区（09-30 老哥定：销量是变动项，要在正文留时序；同商品二次采集追加/更新当天行） */
+const TRACK_HEAD = "## 每日跟踪（变动）";
+const TRACK_COLS = "| 日期 | 商品销量 |";
+const trackRow = (day, val) => "| " + day + " | " + val + " |";
+const soldCell = (r) => {
+  const v = (r.track || {})["商品销量"];
+  if (v == null) return null;
+  return v + ((r.raw && r.raw["已售是下界"]) ? "+" : "");   // 下界（「已售1.5万+」）标个 +，别当精确值
+};
+
 function resultMarkdown(r) {
   const one = (v) => String(v == null ? "" : v).replace(/[\r\n]+/g, " ");
   const yaml = (obj) => Object.keys(obj)
@@ -507,11 +517,66 @@ function resultMarkdown(r) {
 
   const a = r.archive || {}, t = r.track || {};
   const head = Object.assign({ type: "商品采集", 商品ID: r.itemId, 采集时间: r.抓取时间 || nowStr() }, a, t);
-  // 数据全在 frontmatter（Obsidian 打开笔记，属性面板直接可见）→ 正文不再重复列表格；
-  // 正文只留回源链接。（老哥 09-30：属性里一份、正文再来一份 = 重复）
+  // 固定项都在 frontmatter（Obsidian 打开笔记，属性面板直接可见）→ 正文不重复列；
+  // 正文只放两样：回源链接 + 「每日跟踪」（销量是时序数据，frontmatter 装不下）—— 老哥 09-30 定。
   let md = "---\n" + yaml(head) + "\n---\n\n# " + (a.商品标题 || r.itemId || "商品采集") + "\n\n";
   if (r.itemId) md += "商品链接：https://www.xiaohongshu.com/goods-detail/" + r.itemId + "\n";
+  const sc = soldCell(r);
+  if (sc != null) md += "\n" + TRACK_HEAD + "\n\n" + TRACK_COLS + "\n|---|---|\n" + trackRow(nowStr().slice(0, 10), sc) + "\n";
   return md;
+}
+
+/** 在笔记目录里按 frontmatter 的「商品ID」找同商品的已有笔记（找不到返回 null）。
+    只在配置的目录里找 —— 不误碰库里其它笔记。 */
+async function findNoteByItemId(app, folder, itemId) {
+  const clean = String(folder || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  const prefix = clean ? clean + "/" : "";
+  const needle = "商品ID: \"" + String(itemId) + "\"";
+  for (const f of app.vault.getMarkdownFiles()) {
+    if (prefix) { if (f.path.indexOf(prefix) !== 0) continue; }
+    else if (f.path.indexOf("/") >= 0) continue;   // 没设目录 → 只看库根
+    let txt = "";
+    try { txt = await app.vault.cachedRead(f); } catch { continue; }
+    if (txt.slice(0, 800).indexOf(needle) >= 0) return f;
+  }
+  return null;
+}
+
+/** 在正文里 upsert「每日跟踪」表：今天已有行就改值，没有就追加一行（表格按时间自然递增）。 */
+function upsertTrackRow(body, day, val) {
+  const row = trackRow(day, val);
+  const lines = body.split("\n");
+  const hi = lines.findIndex((l) => l.trim() === TRACK_HEAD);
+  if (hi < 0) {
+    return body.replace(/\s+$/, "") + "\n\n" + TRACK_HEAD + "\n\n" + TRACK_COLS + "\n|---|---|\n" + row + "\n";
+  }
+  let start = -1, end = -1;
+  for (let i = hi + 1; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t.indexOf("|") === 0) { if (start < 0) start = i; end = i; }
+    else if (start >= 0) break;
+  }
+  if (start < 0) {
+    lines.splice(hi + 1, 0, "", TRACK_COLS, "|---|---|", row);
+    return lines.join("\n");
+  }
+  let hit = -1;
+  const re = new RegExp("^\\|\\s*" + day + "\\s*\\|");
+  for (let i = start; i <= end; i++) if (re.test(lines[i])) { hit = i; break; }
+  if (hit >= 0) lines[hit] = row;
+  else lines.splice(end + 1, 0, row);
+  return lines.join("\n");
+}
+
+/** 同商品二次采集：用最新数据刷新 frontmatter，并在正文「每日跟踪」里 upsert 今天那行。
+    （正文里手工写的内容原样保留；只动 frontmatter 与每日跟踪表 —— 老哥 09-30 定） */
+function mergeCollectedNote(oldTxt, res, freshMd) {
+  const fm = freshMd.match(/^---\n[\s\S]*?\n---\n/);
+  const newFm = fm ? fm[0] : "";
+  let body = oldTxt.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+  const sc = soldCell(res);
+  if (sc != null) body = upsertTrackRow(body, nowStr().slice(0, 10), sc);
+  return newFm + body.replace(/^\s*\n/, "\n");
 }
 /** 写入 vault（自动建目录、重名加序号）。返回实际路径。 */
 async function writeNoteToVault(app, folder, baseName, content) {
@@ -740,10 +805,23 @@ class CollectorPlugin extends Plugin {
       接工作台时不用这个 —— 那边由确认弹窗决定写哪张 duowei 表。 */
   async saveResultNote(res) {
     const folder = (this.settings.noteFolder || "").trim();
-    const name = res.kind === "shop"
+    const isShop = res.kind === "shop";
+    const name = isShop
       ? ("店铺-" + ((res.shop && res.shop.店铺名) || (res.shop && res.shop.seller_id) || "采集"))
       : ((res.archive && res.archive.商品标题) || res.itemId || "商品采集");
-    return await writeNoteToVault(this.app, folder, name, resultMarkdown(res));
+
+    // 同一商品二次采集 → 更新原笔记（刷新 frontmatter + 在「每日跟踪」加/改今天那行），
+    // 不新建重复文档（老哥 09-30：同一个商品别每次多一份 MD）
+    if (!isShop && res.itemId) {
+      const prev = await findNoteByItemId(this.app, folder, res.itemId);
+      if (prev) {
+        const old = await this.app.vault.read(prev);
+        await this.app.vault.modify(prev, mergeCollectedNote(old, res, resultMarkdown(res)));
+        return { path: prev.path, updated: true };
+      }
+    }
+    const path = await writeNoteToVault(this.app, folder, name, resultMarkdown(res));
+    return { path: path, updated: false };
   }
 }
 /* ───────────────── UI：输入 / 预览 ───────────────── */
@@ -805,8 +883,8 @@ class CollectPreviewModal extends Modal {
       saveBtn.onclick = async () => {
         saveBtn.disabled = true;
         try {
-          const p = await this.plugin.saveResultNote(r);
-          new Notice("已保存笔记：" + p, 6000);
+          const out = await this.plugin.saveResultNote(r);
+          new Notice((out.updated ? "已更新原笔记（每日跟踪已追加）：" : "已保存笔记：") + out.path, 6000);
           this.close();
         } catch (e) {
           saveBtn.disabled = false;
