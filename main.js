@@ -981,12 +981,12 @@ function runAsync(cmd, args, opts) {
     if (child.stderr) child.stderr.on("data", (d) => (err += d.toString("utf8")));
     child.on("error", (e) => { err += String(e && e.message ? e.message : e); finish(-1); });
     child.on("close", (c) => finish(c == null ? -1 : c));
-    const to = setTimeout(() => {
-      try { child.kill(); } catch (e) { /* ignore */ }
+    const to = window.setTimeout(() => {
+      try { child.kill(); } catch { /* ignore */ }
       err += "\n[超时] 已终止子进程";
       finish(-2);
     }, Math.max(5, opts && opts.timeoutSec ? opts.timeoutSec : DEFAULTS.timeoutSec) * 1000);
-    child.on("close", () => clearTimeout(to));
+    child.on("close", () => window.clearTimeout(to));
   });
 }
 
@@ -1001,7 +1001,6 @@ class CollectorPlugin extends Plugin {
     this.addCommand({ id: "collector-selftest", name: "采集器自检（Python / 脚本是否就位）", callback: () => this.selftest() });
     this.addSettingTab(new CollectorSettingTab(this.app, this));
 
-    console.log("[xhs-product-search] loaded · project=" + this.settings.projectDir);
   }
 
   /* 内嵌脚本释放：插件目录没有 vendor/xhs.py 时写出（社区市场 / 手动只装 main.js 的场景）。
@@ -1016,13 +1015,12 @@ class CollectorPlugin extends Plugin {
         try {
           const h = crypto.createHash("md5").update(fs.readFileSync(f)).digest("hex");
           if (h !== VENDOR_MD5) console.warn("[xhs-product-search] vendor/xhs.py 与内嵌版指纹不同（本地=" + h + " 内嵌=" + VENDOR_MD5 + "），按本地副本运行");
-        } catch (e) { /* 校验失败不影响使用 */ }
+        } catch { /* 校验失败不影响使用 */ }
         return;
       }
       try {
         fs.mkdirSync(vdir, { recursive: true });
         fs.writeFileSync(f, Buffer.from(VENDOR_B64, "base64"));
-        console.log("[xhs-product-search] 已释放内嵌脚本 → " + f);
         return;
       } catch (e) {
         console.error("[xhs-product-search] 释放 vendor/xhs.py 失败（" + f + "）：", e);
@@ -1131,13 +1129,13 @@ class CollectorPlugin extends Plugin {
     const res = await runAsync(py.cmd, args, {
       cwd: path.dirname(deps.script), env, timeoutSec: this.settings.timeoutSec,
     });
-    try { fs.unlinkSync(tmp); } catch (e) { /* ignore */ }
+    try { fs.unlinkSync(tmp); } catch { /* ignore */ }
 
     // ③ 解析 JSON（脚本可能同时往 stdout 打别的行 → 从第一个 "{" 开始截）
     const start = res.out.indexOf("{");
     let parsed = null;
     if (start >= 0) {
-      try { parsed = JSON.parse(res.out.slice(start, res.out.lastIndexOf("}") + 1)); } catch (e) { parsed = null; }
+      try { parsed = JSON.parse(res.out.slice(start, res.out.lastIndexOf("}") + 1)); } catch { parsed = null; }
     }
     // ②·b 单品没采到 ≠ 直接失败：认出是「店铺」链接就转店铺采集（B2.5）
     //      （cmd_goods 的容错解析会把"这是店铺/账号主页"的原因逐条带回来）
@@ -1191,7 +1189,7 @@ class CollectorPlugin extends Plugin {
     const start = res.out.indexOf("{");
     let parsed = null;
     if (start >= 0) {
-      try { parsed = JSON.parse(res.out.slice(start, res.out.lastIndexOf("}") + 1)); } catch (e) { parsed = null; }
+      try { parsed = JSON.parse(res.out.slice(start, res.out.lastIndexOf("}") + 1)); } catch { parsed = null; }
     }
     if (!parsed || !parsed["店铺"]) {
       const why = (res.err || "").trim() || (res.out || "").trim() || "退出码 " + res.code;
@@ -1303,7 +1301,9 @@ class CollectorSettingTab extends PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "小红书商品搜索" });
+    new Setting(containerEl)
+      .setName("小红书商品搜索")
+      .setHeading();
 
     new Setting(containerEl)
       .setName("采集脚本目录（可留空）")
