@@ -1,5 +1,12 @@
 # Changelog
 
+## 未发布（Unreleased）
+
+- **设置页改用 Obsidian 1.13 的声明式设置 API**（`getSettingDefinitions()`）——
+  设置项现在会出现在 Obsidian 的**设置搜索**里；`display()` 保留作 1.13 以下的回退（minAppVersion 1.4.0）。
+  读写桥显式接到 `plugin.settings`（`getControlValue` / `setControlValue`），存取路径与原行为一致。
+  官方 eslint 预检：1 warning → **0**。
+
 ## 0.3.0 — 2026-09-30
 
 **采集字段扩充 + 独立使用可存 Markdown（并能更新原笔记）+ 去掉多余提示。**

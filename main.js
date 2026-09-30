@@ -905,6 +905,62 @@ class CollectPreviewModal extends Modal {
 /* ───────────────── 设置页（结构文档 §13.5 的「采写模式」开关落在这里） ───────────────── */
 class CollectorSettingTab extends PluginSettingTab {
   constructor(app, plugin) { super(app, plugin); this.plugin = plugin; }
+
+  /* ── 声明式设置（Obsidian 1.13+）────────────────────────────────────────
+     实现 getSettingDefinitions() 后，1.13+ 会走这里 —— 设置项才会出现在
+     Obsidian 的**设置搜索**里（旧写法 display() 建的 DOM 搜不到）。
+     1.13 以下（minAppVersion 1.4.0）仍走下面的 display() 回退，两边内容保持一致。 */
+  getSettingDefinitions() {
+    return [
+      { type: "group", heading: "小红书商品搜索" },
+      {
+        name: "采集引擎",
+        desc: "内置 JS 引擎 —— 走 Obsidian 网络接口直接采集：不需要安装 Python，也不需要任何外部脚本；桌面版与移动版都能用。"
+          + "数据取自小红书公开商品页 / 店铺页（无登录态、无 Cookie、无遥测）。",
+        action: () => { this.plugin.selftest(); },
+      },
+      {
+        name: "采写模式",
+        desc: "结构文档 §13.5：省的是写入动作。商品销量每天写；固定项与档案里现有值 diff，变了才写。",
+        control: {
+          type: "dropdown",
+          key: "mode",
+          options: {
+            "全部采写": "全采（默认）—— 采到的每项都写库",
+            "变动才采写": "变动才采 —— 固定项 diff 命中才写（在每日跟踪备注记一句）",
+          },
+        },
+      },
+      {
+        name: "独立使用 · 笔记保存目录",
+        desc: "不接工作台时，预览弹窗里「保存为 Markdown 笔记」存到这个目录（库内相对路径；留空 = 库根）。"
+          + "接工作台时怎么写由工作台的确认弹窗决定，这里不影响。",
+        control: { type: "text", key: "noteFolder", placeholder: "小红书商品采集" },
+      },
+      {
+        name: "已知边界",
+        desc: "「开店天数」网页端取不到（只有 App 的「店铺详情」页有）→ 该字段留空、需手填。"
+          + "分享短链（xhslink）在桌面端会自动展开；移动端请改用完整商品链接，或直接粘商品 ID。",
+      },
+    ];
+  }
+
+  /* 声明式控件的读写桥：设置存在 plugin.settings 里（loadData/saveData），
+     所以显式接上——不依赖框架的默认存取路径。 */
+  getControlValue(key) {
+    if (key === "mode" || key === "noteFolder") return this.plugin.settings[key];
+    return super.getControlValue ? super.getControlValue(key) : undefined;
+  }
+  async setControlValue(key, value) {
+    if (key === "mode" || key === "noteFolder") {
+      this.plugin.settings[key] = key === "noteFolder" && typeof value === "string" ? value.trim() : value;
+      await this.plugin.saveSettings();
+      return;
+    }
+    if (super.setControlValue) await super.setControlValue(key, value);
+  }
+
+  /* 旧版回退（Obsidian < 1.13）：内容与 getSettingDefinitions() 保持一致 */
   display() {
     const { containerEl } = this;
     containerEl.empty();
