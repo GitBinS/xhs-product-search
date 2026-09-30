@@ -1,0 +1,6 @@
+data.json
+*.tmp-write
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc

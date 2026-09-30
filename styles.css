@@ -1,0 +1,50 @@
+/* 小红书商品采集器 —— 只给本插件自己的界面用（输入框 / 预览表）。
+   ⚠️ 作用域限定：Obsidian 插件的 styles.css 是**全局加载**的 → 选择器一律加 `.xgc-` 前缀类，
+   不用裸元素选择器，避免命中宿主或其它插件的 UI（B1 的教训）。 */
+
+.xgc-input {
+  width: 100%;
+  min-height: 62px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.xgc-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.xgc-tb {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4px 0 12px;
+  font-size: 13px;
+}
+
+.xgc-tb td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  vertical-align: top;
+}
+
+.xgc-tb td.xgc-k {
+  width: 40%;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* 设置页的「当前解析结果」块 */
+.xgc-resolved {
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--background-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+  word-break: break-all;
+}
+.xgc-resolved-line { color: var(--text-muted); }
+.xgc-resolved-bad { color: var(--text-error); margin-top: 4px; }
