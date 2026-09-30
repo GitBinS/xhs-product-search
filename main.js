@@ -482,12 +482,6 @@ function resultMarkdown(r) {
   const one = (v) => String(v == null ? "" : v).replace(/[\r\n]+/g, " ");
   const yaml = (obj) => Object.keys(obj)
     .map((k) => k + ': "' + one(obj[k]).replace(/"/g, '\\"') + '"').join("\n");
-  const kvTable = (obj) => {
-    const rows = Object.keys(obj).map((k) => "| " + k + " | " +
-      (obj[k] == null || obj[k] === "" ? "（留空）" : String(obj[k]).replace(/\|/g, "\\|")) + " |");
-    return ["| 字段 | 值 |", "|---|---|"].concat(rows).join("\n");
-  };
-  const warnBlock = (ws) => (ws && ws.length ? "\n> **口径提醒**\n" + ws.map((w) => "> - " + w).join("\n") + "\n" : "");
 
   if (r.kind === "shop") {
     const s = r.shop || {};
@@ -495,7 +489,9 @@ function resultMarkdown(r) {
       type: "店铺采集", 店铺名: s.店铺名, seller_id: s.seller_id,
       店铺总销量: s.店铺总销量, 粉丝数: s.粉丝数, 好评率: s.好评率, 发货时效: s.发货时效, 采集时间: nowStr(),
     };
-    let md = "---\n" + yaml(head) + "\n---\n\n# " + (s.店铺名 || "店铺采集") + "（店铺采集）\n\n" + kvTable(s) + "\n\n";
+    // 店铺信息全在 frontmatter（属性面板可见）→ 正文不重复列；这里只列首页商品
+    //（商品列表是「列表」，frontmatter 装不下，不算重复）
+    let md = "---\n" + yaml(head) + "\n---\n\n# " + (s.店铺名 || "店铺采集") + "（店铺采集）\n\n";
     const ps = r.products || [];
     md += "## 首页可见商品（" + ps.length + " 个）\n\n";
     if (ps.length) {
@@ -506,15 +502,16 @@ function resultMarkdown(r) {
           (p.上架日期 || "—") + " | " + (p.上架天数 == null ? "—" : p.上架天数) + " | " + (p.角标 || "—") + " |\n";
       });
     } else md += "（该店首页可见商品 0 个）\n";
-    return md + warnBlock(r.warnings);
+    return md;
   }
 
   const a = r.archive || {}, t = r.track || {};
   const head = Object.assign({ type: "商品采集", 商品ID: r.itemId, 采集时间: r.抓取时间 || nowStr() }, a, t);
+  // 数据全在 frontmatter（Obsidian 打开笔记，属性面板直接可见）→ 正文不再重复列表格；
+  // 正文只留回源链接。（老哥 09-30：属性里一份、正文再来一份 = 重复）
   let md = "---\n" + yaml(head) + "\n---\n\n# " + (a.商品标题 || r.itemId || "商品采集") + "\n\n";
-  md += "## 测品档案（固定 / 低频）\n\n" + kvTable(a) + "\n\n";
-  md += "## 每日跟踪（变动）\n\n" + kvTable(t) + "\n";
-  return md + warnBlock(r.warnings);
+  if (r.itemId) md += "商品链接：https://www.xiaohongshu.com/goods-detail/" + r.itemId + "\n";
+  return md;
 }
 /** 写入 vault（自动建目录、重名加序号）。返回实际路径。 */
 async function writeNoteToVault(app, folder, baseName, content) {
@@ -802,12 +799,6 @@ class CollectPreviewModal extends Modal {
       table("→ 每日跟踪（变动 · 一天一行）", r.track);
     }
 
-    if (r.warnings && r.warnings.length) {
-      contentEl.createEl("h4", { text: "⚠️ 口径提醒" });
-      const ul = contentEl.createEl("ul");
-      r.warnings.forEach((w) => ul.createEl("li", { text: w }));
-    }
-
     const bar = contentEl.createDiv({ cls: "xgc-bar" });
     if (this.plugin) {
       const saveBtn = bar.createEl("button", { text: "保存为 Markdown 笔记", cls: "mod-cta" });
@@ -863,6 +854,7 @@ class CollectorSettingTab extends PluginSettingTab {
 
     const box = containerEl.createDiv({ cls: "xgc-resolved" });
     box.createEl("div", { cls: "xgc-resolved-line", text: "数据来源：小红书公开商品页 / 店铺页（无登录态、无 Cookie、无遥测）。" });
+    box.createEl("div", { cls: "xgc-resolved-line", text: "「开店天数」网页端取不到（只有 App 的「店铺详情」页有）→ 该字段留空，需要手填。" });
     box.createEl("div", { cls: "xgc-resolved-line", text: "分享短链（xhslink）在桌面端会自动展开；移动端请改用完整商品链接，或直接粘商品 ID。" });
   }
 }
