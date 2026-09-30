@@ -35,6 +35,9 @@ It works **standalone** (ribbon icon or command palette) and exposes a small API
 2. Click the shopping-bag ribbon icon (or run “采集一个商品” from the command palette).
 3. Paste a product link / share text / product ID.
 4. The result modal shows the collected fields and any caveats (e.g. “sales figure is a lower bound”).
+5. Click **“保存为 Markdown 笔记”** to save the result as a Markdown note in your vault (folder configurable), or “复制为 JSON” to copy it.
+
+**Standalone vs. workbench**: on its own, use “保存为 Markdown 笔记” to write a `.md` into the vault (same idea as the note-collector plugin). When used with the author's goods-trading workbench, **the confirm dialog decides which multi-dimensional tables get the data** — this plugin does not duplicate that.
 
 Commands:
 

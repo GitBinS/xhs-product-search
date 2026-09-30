@@ -261,11 +261,15 @@ async function fetchGoods(itemId) {
   tags = tags.concat((priceH5.tags || []).map(tagText)).filter(Boolean);
   const promo = (((b.profitBarV1 || {}).tags) || []).map(tagText).filter(Boolean);
 
-  // SKU 数：data.common_data.statisticInfo.skuNum（逐层 isinstance 防御）
+  // SKU 数：data.common_data.statisticInfo.skuNum
+  // 🔴 2026-09-30 修：实测 `common_data` 是**转义的 JSON 字符串**（"{\"statisticInfo\":{\"skuNum\":4}}"），
+  //    旧代码只认 typeof==="object" → 字符串被静默跳过 → SKU 数恒为空（老哥截图里那个「（留空）」）。
+  //    两种形态都吃：字符串先 JSON.parse，对象直接用。
   let stat = {};
   const droot = data.data;
   if (droot && typeof droot === "object") {
-    const cd = droot.common_data;
+    let cd = droot.common_data;
+    if (typeof cd === "string" && cd) { try { cd = JSON.parse(cd); } catch { cd = null; } }
     if (cd && typeof cd === "object") {
       const st = cd.statisticInfo;
       if (st && typeof st === "object") stat = st;
@@ -464,8 +468,78 @@ async function applyShopSold(rec) {
   return rec;
 }
 
+/* ── 独立使用：把采集结果写成 Markdown 笔记（老哥 09-30：JSON 在 Obsidian 里看不了，要能存成 MD）──
+   与「爆款笔记采集」插件同一思路：不接工作台时，采集结果落成库内 .md 文件。 */
+function safeFileName(s) {
+  return String(s == null ? "" : s)
+    .replace(/[\\/:*?"<>|#^[\]]/g, " ")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+function resultMarkdown(r) {
+  const one = (v) => String(v == null ? "" : v).replace(/[\r\n]+/g, " ");
+  const yaml = (obj) => Object.keys(obj)
+    .map((k) => k + ': "' + one(obj[k]).replace(/"/g, '\\"') + '"').join("\n");
+  const kvTable = (obj) => {
+    const rows = Object.keys(obj).map((k) => "| " + k + " | " +
+      (obj[k] == null || obj[k] === "" ? "（留空）" : String(obj[k]).replace(/\|/g, "\\|")) + " |");
+    return ["| 字段 | 值 |", "|---|---|"].concat(rows).join("\n");
+  };
+  const warnBlock = (ws) => (ws && ws.length ? "\n> **口径提醒**\n" + ws.map((w) => "> - " + w).join("\n") + "\n" : "");
+
+  if (r.kind === "shop") {
+    const s = r.shop || {};
+    const head = {
+      type: "店铺采集", 店铺名: s.店铺名, seller_id: s.seller_id,
+      店铺总销量: s.店铺总销量, 粉丝数: s.粉丝数, 好评率: s.好评率, 发货时效: s.发货时效, 采集时间: nowStr(),
+    };
+    let md = "---\n" + yaml(head) + "\n---\n\n# " + (s.店铺名 || "店铺采集") + "（店铺采集）\n\n" + kvTable(s) + "\n\n";
+    const ps = r.products || [];
+    md += "## 首页可见商品（" + ps.length + " 个）\n\n";
+    if (ps.length) {
+      md += "| 标题 | 价格 | 已售 | 上架日期 | 上架天数 | 角标 |\n|---|---|---|---|---|---|\n";
+      ps.forEach((p) => {
+        md += "| " + String(p.标题 || p.item_id || "—").replace(/\|/g, "\\|") + " | " +
+          (p.价格 == null ? "—" : p.价格) + " | " + (p.已售原文 || (p.已售 == null ? "—" : p.已售)) + " | " +
+          (p.上架日期 || "—") + " | " + (p.上架天数 == null ? "—" : p.上架天数) + " | " + (p.角标 || "—") + " |\n";
+      });
+    } else md += "（该店首页可见商品 0 个）\n";
+    return md + warnBlock(r.warnings);
+  }
+
+  const a = r.archive || {}, t = r.track || {};
+  const head = Object.assign({ type: "商品采集", 商品ID: r.itemId, 采集时间: r.抓取时间 || nowStr() }, a, t);
+  let md = "---\n" + yaml(head) + "\n---\n\n# " + (a.商品标题 || r.itemId || "商品采集") + "\n\n";
+  md += "## 测品档案（固定 / 低频）\n\n" + kvTable(a) + "\n\n";
+  md += "## 每日跟踪（变动）\n\n" + kvTable(t) + "\n";
+  return md + warnBlock(r.warnings);
+}
+/** 写入 vault（自动建目录、重名加序号）。返回实际路径。 */
+async function writeNoteToVault(app, folder, baseName, content) {
+  const clean = String(folder || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  if (clean) {
+    let cur = "";
+    for (const seg of clean.split("/")) {
+      cur = cur ? cur + "/" + seg : seg;
+      if (!app.vault.getAbstractFileByPath(cur)) {
+        try { await app.vault.createFolder(cur); } catch { /* 并发下已存在，忽略 */ }
+      }
+    }
+  }
+  const base = safeFileName(baseName) || "商品采集";
+  const prefix = clean ? clean + "/" : "";
+  let path = prefix + base + ".md";
+  let i = 1;
+  while (app.vault.getAbstractFileByPath(path)) path = prefix + base + "-" + (i++) + ".md";
+  await app.vault.create(path, content);
+  return path;
+}
+
 const DEFAULTS = {
   mode: "全部采写",
+  noteFolder: "小红书商品采集", // 独立使用（无工作台）时，「保存为 Markdown 笔记」存到这里
 };
 
 /* ───────────────── 字段归一化（结构文档 §13.3 采集规格 + §13.4 字段最终落位） ─────────────────
@@ -655,9 +729,19 @@ class CollectorPlugin extends Plugin {
       new Notice("采集中…（内置引擎，几秒）", 2500);
       const r = await this.collect(val);
       if (!r.ok) { new Notice("采集失败：" + r.error, 9000); return; }
-      new CollectPreviewModal(this.app, r).open();
+      new CollectPreviewModal(this.app, r, this).open();
     });
     m.open();
+  }
+
+  /** 独立使用（无工作台）：把结果写成库内 Markdown 笔记（目录见设置）。
+      接工作台时不用这个 —— 那边由确认弹窗决定写哪张 duowei 表。 */
+  async saveResultNote(res) {
+    const folder = (this.settings.noteFolder || "").trim();
+    const name = res.kind === "shop"
+      ? ("店铺-" + ((res.shop && res.shop.店铺名) || (res.shop && res.shop.seller_id) || "采集"))
+      : ((res.archive && res.archive.商品标题) || res.itemId || "商品采集");
+    return await writeNoteToVault(this.app, folder, name, resultMarkdown(res));
   }
 }
 /* ───────────────── UI：输入 / 预览 ───────────────── */
@@ -678,7 +762,7 @@ class CollectInputModal extends Modal {
 }
 
 class CollectPreviewModal extends Modal {
-  constructor(app, res) { super(app); this.res = res; }
+  constructor(app, res, plugin) { super(app); this.res = res; this.plugin = plugin; }
   onOpen() {
     const { contentEl } = this;
     const r = this.res;
@@ -720,13 +804,27 @@ class CollectPreviewModal extends Modal {
     }
 
     const bar = contentEl.createDiv({ cls: "xgc-bar" });
+    if (this.plugin) {
+      const saveBtn = bar.createEl("button", { text: "保存为 Markdown 笔记", cls: "mod-cta" });
+      saveBtn.onclick = async () => {
+        saveBtn.disabled = true;
+        try {
+          const p = await this.plugin.saveResultNote(r);
+          new Notice("已保存笔记：" + p, 6000);
+          this.close();
+        } catch (e) {
+          saveBtn.disabled = false;
+          new Notice("保存失败：" + (e && e.message ? e.message : e), 9000);
+        }
+      };
+    }
     const copy = bar.createEl("button", { text: "复制为 JSON" });
     copy.onclick = () => {
       const payload = r.kind === "shop" ? { shop: r.shop, products: r.products } : { archive: r.archive, track: r.track };
       navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
       new Notice("已复制");
     };
-    bar.createEl("button", { text: "关闭", cls: "mod-cta" }).onclick = () => this.close();
+    bar.createEl("button", { text: "关闭", cls: this.plugin ? "" : "mod-cta" }).onclick = () => this.close();
   }
   onClose() { this.contentEl.empty(); }
 }
@@ -751,6 +849,12 @@ class CollectorSettingTab extends PluginSettingTab {
         .addOption("变动才采写", "变动才采 —— 固定项 diff 命中才写（在每日跟踪备注记一句）")
         .setValue(this.plugin.settings.mode)
         .onChange(async (v) => { this.plugin.settings.mode = v; await this.plugin.saveSettings(); }));
+
+    new Setting(containerEl)
+      .setName("独立使用 · 笔记保存目录")
+      .setDesc("不接工作台时，预览弹窗里「保存为 Markdown 笔记」存到这个目录（库内相对路径；留空 = 库根）。接工作台时怎么写由工作台的确认弹窗决定，这里不影响。")
+      .addText((t) => t.setValue(this.plugin.settings.noteFolder)
+        .onChange(async (v) => { this.plugin.settings.noteFolder = v.trim(); await this.plugin.saveSettings(); }));
 
     const box = containerEl.createDiv({ cls: "xgc-resolved" });
     box.createEl("div", { cls: "xgc-resolved-line", text: "数据来源：小红书公开商品页 / 店铺页（无登录态、无 Cookie、无遥测）。" });
