@@ -28,7 +28,7 @@ async function main() {
   fs.writeFileSync(path.join(nm, "package.json"), JSON.stringify({ name: "obsidian", main: "index.js" }));
 
   const stubDir = fs.mkdtempSync(path.join(os.tmpdir(), "wbsmoke-"));
-  const plugDir = path.join(stubDir, "plugins", "xhs-goods-collector");
+  const plugDir = path.join(stubDir, "plugins", "xhs-product-search");
   fs.mkdirSync(plugDir, { recursive: true });
   const CollectorPlugin = require(path.join(REPO, "main.js"));
   const Ctor = CollectorPlugin.default || CollectorPlugin;
@@ -61,10 +61,10 @@ async function main() {
   console.log("④ manifest.dir 为相对路径 → 用 vault 基路径拼绝对目录释放");
   const base2 = path.join(stubDir, "vault-root");
   const plugin2 = Object.create(Ctor.prototype);
-  plugin2.manifest = { dir: ".obsidian/plugins/xhs-goods-collector" };
+  plugin2.manifest = { dir: ".obsidian/plugins/xhs-product-search" };
   plugin2.app = { vault: { adapter: { getBasePath() { return base2; } } } };
   plugin2.ensureVendorScript();
-  assert(fs.existsSync(path.join(base2, ".obsidian", "plugins", "xhs-goods-collector", "vendor", "xhs.py")), "相对 manifest.dir 也能落对位置");
+  assert(fs.existsSync(path.join(base2, ".obsidian", "plugins", "xhs-product-search", "vendor", "xhs.py")), "相对 manifest.dir 也能落对位置");
 
   fs.rmSync(stubDir, { recursive: true, force: true });
   fs.rmSync(path.join(REPO, "node_modules"), { recursive: true, force: true });

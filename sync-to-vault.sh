@@ -4,7 +4,7 @@
 set -eu
 
 REPO="$(cd "$(dirname "$0")" && pwd)"
-VAULT_PLUGIN="/e/第二大脑/.obsidian/plugins/xhs-goods-collector"
+VAULT_PLUGIN="/e/第二大脑/.obsidian/plugins/xhs-product-search"
 
 if [ ! -d "$VAULT_PLUGIN" ]; then
   echo "目标目录不存在，正在创建：$VAULT_PLUGIN"

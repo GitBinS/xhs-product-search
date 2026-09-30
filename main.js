@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   小红书商品采集器 · 独立插件（v0.1.0）
+   小红书商品搜索 · 独立插件（v0.1.0）
    ──────────────────────────────────────────────────────────────────────────
    定位（结构文档 §13.2，老哥 09-23 定）：**独立插件 + 带货工作台调用它**。
 
@@ -15,7 +15,7 @@
 
    ⚠️ 本插件**只采集，不写库**。写库由工作台负责（B2 ③：预览 → 用户确认 → 才写档案）。
 
-   对外接口（工作台用 `app.plugins.getPlugin('xhs-goods-collector')` 调，**不用 require**：
+   对外接口（工作台用 `app.plugins.getPlugin('xhs-product-search')` 调，**不用 require**：
    A2 实测 `require` 别家 main.js 必失败）：
      · checkDeps()        → { ok, python, script, problems[] }
      · collect(input)     → { ok, itemId, 链接, archive{…}, track{…}, extra{…}, warnings[], raw }
@@ -1001,7 +1001,7 @@ class CollectorPlugin extends Plugin {
     this.addCommand({ id: "collector-selftest", name: "采集器自检（Python / 脚本是否就位）", callback: () => this.selftest() });
     this.addSettingTab(new CollectorSettingTab(this.app, this));
 
-    console.log("[xhs-goods-collector] loaded · project=" + this.settings.projectDir);
+    console.log("[xhs-product-search] loaded · project=" + this.settings.projectDir);
   }
 
   /* 内嵌脚本释放：插件目录没有 vendor/xhs.py 时写出（社区市场 / 手动只装 main.js 的场景）。
@@ -1015,20 +1015,20 @@ class CollectorPlugin extends Plugin {
       if (fs.existsSync(f)) {
         try {
           const h = crypto.createHash("md5").update(fs.readFileSync(f)).digest("hex");
-          if (h !== VENDOR_MD5) console.warn("[xhs-goods-collector] vendor/xhs.py 与内嵌版指纹不同（本地=" + h + " 内嵌=" + VENDOR_MD5 + "），按本地副本运行");
+          if (h !== VENDOR_MD5) console.warn("[xhs-product-search] vendor/xhs.py 与内嵌版指纹不同（本地=" + h + " 内嵌=" + VENDOR_MD5 + "），按本地副本运行");
         } catch (e) { /* 校验失败不影响使用 */ }
         return;
       }
       try {
         fs.mkdirSync(vdir, { recursive: true });
         fs.writeFileSync(f, Buffer.from(VENDOR_B64, "base64"));
-        console.log("[xhs-goods-collector] 已释放内嵌脚本 → " + f);
+        console.log("[xhs-product-search] 已释放内嵌脚本 → " + f);
         return;
       } catch (e) {
-        console.error("[xhs-goods-collector] 释放 vendor/xhs.py 失败（" + f + "）：", e);
+        console.error("[xhs-product-search] 释放 vendor/xhs.py 失败（" + f + "）：", e);
       }
     }
-    console.warn("[xhs-goods-collector] 没有可写的插件目录来释放 vendor/xhs.py");
+    console.warn("[xhs-product-search] 没有可写的插件目录来释放 vendor/xhs.py");
   }
 
   async loadSettings() {
@@ -1303,7 +1303,7 @@ class CollectorSettingTab extends PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "小红书商品采集器" });
+    containerEl.createEl("h2", { text: "小红书商品搜索" });
 
     new Setting(containerEl)
       .setName("采集脚本目录（可留空）")

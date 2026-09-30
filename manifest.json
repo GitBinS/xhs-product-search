@@ -1,6 +1,6 @@
 {
-	"id": "xhs-goods-collector",
-	"name": "Xiaohongshu Goods Collector",
+	"id": "xhs-product-search",
+	"name": "XHS Product Search",
 	"version": "0.1.0",
 	"minAppVersion": "1.4.0",
 	"description": "Collect Xiaohongshu product details (price, shipping origin, shop rating, listing age, sales) with a bundled standard-library-only Python script. Works standalone or as the data backend for other plugins. No login required.",

@@ -1,4 +1,4 @@
-# Xiaohongshu Goods Collector
+# XHS Product Search
 
 Collect product details from Xiaohongshu (小红书) product pages into structured JSON — designed for desktop Obsidian.
 
