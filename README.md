@@ -28,6 +28,17 @@ When used standalone (no workbench), click **“保存为 Markdown 笔记”** a
 - **Re-collecting the same product updates the existing note** (refreshes properties + updates that day's row, appends a new row on another day) — no duplicate notes;
 - The save folder is configurable (default `小红书商品采集`).
 
+## Skill version (for AI tools)
+
+The same collection engine is packaged as a **portable skill** for AI tools that can run local commands — **WorkBuddy / Claude Code / Codex** and other tools supporting the `SKILL.md` layout. Cloud-only chat tools (no local shell) are **not** supported.
+
+- **Install (recommended)** — download `xhs-product-collect-1.0.0.zip` from [Releases](https://github.com/GitBinS/xhs-product-search/releases), unzip, and copy the whole `xhs-product-collect/` folder into your tool's skills directory: `~/.workbuddy/skills/` (WorkBuddy), `~/.claude/skills/` (Claude Code), `~/.codex/skills/` (Codex).
+- **Install (from source)** — clone this repo and copy `skill/xhs-product-collect/`.
+- **Dependencies** — Python 3.7+ only, standard library, no `pip install`.
+- **Version** — skill 1.0.0 ports this plugin's **v0.3.1** engine, function by function.
+
+> ⚠️ Downloading the repository as a zip? The folder you need is `skill/xhs-product-collect/` — copy exactly that level.
+
 ## How it works
 
 - The collector is **built in**. It calls two **public** Xiaohongshu endpoints with Obsidian's cross-platform `requestUrl` (which bypasses CORS on both desktop and mobile):

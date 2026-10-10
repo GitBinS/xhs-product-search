@@ -28,6 +28,17 @@ English intro in [README.md](README.md).
 - **同一个商品再次采集 → 更新原来那篇笔记**（刷新属性 + 在每日跟踪表里改当天那行、隔天追加新行），不会多出一份重复文档；
 - 保存目录可在设置里改（默认 `小红书商品采集`）。
 
+## Skill 版（AI 工具用）
+
+同一套采集引擎另打包为**可移植 Skill**，面向能执行本地命令的 AI 工具：**WorkBuddy / Claude Code / Codex** 等支持 `SKILL.md` 规范的工具均可；**纯云端对话工具（无本地 shell）不适用**。
+
+- **安装（推荐）**：从 [Releases](https://github.com/GitBinS/xhs-product-search/releases) 下载 `xhs-product-collect-1.0.0.zip` → 解压 → 把 `xhs-product-collect/` 整个目录拷进对应工具的 skills 目录（WorkBuddy `~/.workbuddy/skills/`、Claude Code `~/.claude/skills/`、Codex `~/.codex/skills/`）。
+- **安装（源码）**：clone 本仓库后，拷 `skill/xhs-product-collect/` 目录。
+- **依赖**：仅 Python 3.7+（纯标准库，无需 `pip install`）。
+- **版本对应**：skill 1.0.0 = 本插件 **v0.3.1** 的引擎逐函数移植。
+
+> ⚠️ 下载**整仓 zip** 时注意层级：解压后要拷的是 `skill/xhs-product-collect/` 这一层，不是仓库根。
+
 ## 工作原理
 
 - 采集引擎**内置于插件**，用 Obsidian 官方跨平台网络接口 `requestUrl` 直连两个**公开**接口：

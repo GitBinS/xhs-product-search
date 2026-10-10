@@ -1,5 +1,14 @@
 # Changelog
 
+## skill-1.0.0 — 2026-10-11
+
+**新增配套 Skill：`xhs-product-collect`（采集引擎逐函数移植自本插件 v0.3.1，脱敏首发）。**
+
+- 把插件采集能力移植为**纯标准库 Python CLI**（零第三方依赖），封装为标准 `SKILL.md` Skill —— 可安装到 WorkBuddy / Claude Code / Codex 等支持 SKILL.md 的**本地执行型** AI 工具（纯云端对话工具不适用）。
+- 功能对齐插件：商品 / 店铺采集、短链展开、已售双口径、每日跟踪 upsert；命令行 `--md` / `--save` / `--shop` / `--selftest`。
+- 与插件的关系：**引擎同源**（源自本插件 v0.3.1，逐函数移植）；插件接口变更时本 skill 同步核对升版。
+- 位置：`skill/xhs-product-collect/`；安装包见 Release `skill-1.0.0`（资产 `xhs-product-collect-1.0.0.zip`）。
+
 ## 0.3.1 — 2026-09-30
 
 **修上架审核失败：`manifest.description` 超过 250 字符上限。功能与 0.3.0 完全一致。**
